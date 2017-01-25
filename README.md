@@ -1,12 +1,23 @@
 # raspi-mocp-web
-A web frontend for mocp on raspberry pi.
+A web frontend for mocp on raspberry pi implemented in Node.js.
 
-Requirements:
+## Requirements
+It should work on any system that has the following software installed:
 
- * Raspbian
  * node.js (v 0.10.29)
  * [MOCP](http://moc.daper.net/)
  
-It is a node server and should work with the standard raspbian installation of node.js.
+Depending on your system, `package-manager install nodejs mocp` should be enough, e.g.
 
-Standard port is 8081. It can be changed in the server.js.
+``` bash
+sudo apt install nodejs mocp
+```
+
+## Usage
+Switch to the project directory and run
+
+```bash
+nodejs ./server.js
+```
+
+Afterwards, head over to your browser and visit http://localhost:8081. The default port can be changed in the server.js file.
