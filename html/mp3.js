@@ -9,6 +9,8 @@ window.onload = function() {
         serverstart = document.getElementById('serverstart'),
         serverstop = document.getElementById('serverstop'),
         serverstatus = document.getElementById('serverstatus'),
+        playlistButton = document.getElementById('playlistButton'),
+        playlist = document.getElementById('playlist'),
         serverrunning = false,
         refreshInfo;
 
@@ -96,7 +98,37 @@ window.onload = function() {
             }, 5000);
         }
     };
+    playlistButton.onclick = function() {
+        getJson('./mp3', function(text) {
+            //console.log(text);
+            getMp3(text);
+        });
+    };
 };
+
+function getMp3(filelist, folder) {
+    folder = folder || '';
+    for(var i = 0; i < filelist.length; i++) {
+        //making a new div
+        if(document.getElementById(filelist[i])) { continue; }
+        var div = document.createElement('div');
+        div.setAttribute('id', filelist[i]);
+        div.innerHTML = filelist[i];
+        if(!filelist[i].endsWith('.mp3')) {
+            div.onclick = function() {
+                var id = this.getAttribute('id');
+                getJson('./mp3' + folder + id, function(text) {
+                    getMp3(text, id);
+                });
+            };
+        }
+        if(!folder) {
+            document.getElementById('playlist').appendChild(div);
+        } else {
+            document.getElementById(folder).appendChild(div);
+        }
+    }
+}
 
 function getJson(url, callback) {
     var xhr = new XMLHttpRequest();
