@@ -6,11 +6,16 @@ window.onload = function() {
         forward = document.getElementById('forward'),
         shuffle = document.getElementById('shuffle'),
         repeat = document.getElementById('repeat'),
+        //server
         serverstart = document.getElementById('serverstart'),
         serverstop = document.getElementById('serverstop'),
         serverstatus = document.getElementById('serverstatus'),
+        //playlist
         playlistButton = document.getElementById('playlistButton'),
+        playlistAdd = document.getElementById('playlistAdd'),
         playlist = document.getElementById('playlist'),
+        addToPlaylist = document.getElementById('addToPlaylist'),
+        savePlaylist = document.getElementById('savePlaylist'),
         serverrunning = false,
         refreshInfo;
 
@@ -104,7 +109,32 @@ window.onload = function() {
             getMp3(text);
         });
     };
+    addToPlaylist.onclick = function() {
+        var keys = Object.keys(tempPlaylist);
+            keys.sort();
+        if(keys.length > 0) {
+            for(var i = 0; i < keys.length; i++) {
+                var div = document.createElement('div'),
+                    spanName = document.createElement('span'),
+                    spanCheckbox = document.createElement('span');
+                
+                spanName.appendChild(document.createTextNode(tempPlaylist[keys[i]].filename));
+                spanCheckbox.setAttribute('name', keys[i]);
+                spanCheckbox.setAttribute('checked', true);
+
+                div.appendChild(spanCheckbox);
+                div.appendChild(spanName);
+
+                playlist.appendChild(div);
+            }
+        }
+    };
+    savePlaylist.onclick = function() {
+        postJson('./playlist', tempPlaylist);
+    };
 };
+
+var tempPlaylist = {};
 
 function getMp3(filelist, folder) {
     folder = folder || '';
@@ -112,18 +142,55 @@ function getMp3(filelist, folder) {
         //making a new div
         if(document.getElementById(filelist[i])) { continue; }
         var div = document.createElement('div');
-        div.setAttribute('id', filelist[i]);
+        div.setAttribute('id', folder + filelist[i]);
         div.innerHTML = filelist[i];
         if(!filelist[i].endsWith('.mp3')) {
-            div.onclick = function() {
-                var id = this.getAttribute('id');
-                getJson('./mp3' + folder + id, function(text) {
-                    getMp3(text, id);
-                });
+            div.onclick = function(event) {
+                //we have divs with click events on divs with click events. We don't want both of them to fire simultaneously
+                event.stopPropagation();
+                var id = this.getAttribute('id'),
+                    clName = this.className;
+
+                if(clName.split(' ').indexOf('opened') !== -1){
+                    this.innerHTML = this.childNodes[0].textContent;
+                    clName = clName.split(' ');
+                    clName.splice(clName.indexOf('opened'), 1);
+                    clName = clName.join(' ');
+                    this.setAttribute('class', clName);
+                } else {
+                    this.setAttribute('class', this.className + 'opened ');
+                    getJson('./mp3' + id, function(text) {
+                        getMp3(text, id);
+                    });
+                }
             };
+        } else if(filelist[i].endsWith('.mp3')) {
+            div.onclick = function(event) { event.stopPropagation(); };
+
+            var input = document.createElement('input');
+            input.setAttribute('type', 'checkbox');
+            input.innerHTML = div.innerHTML;
+            input.setAttribute('name', filelist[i]);
+            input.onchange = function(event) {
+                var folder = this.parentNode.parentNode.parentNode.getAttribute('id'), //WARNING: If you change the mark up of the HTML, please be aware of this!
+                    file = this.getAttribute('name');
+                if(Object.keys(tempPlaylist).indexOf(folder + file) === -1) {
+                    tempPlaylist[folder + file] = {
+                        filename: file,
+                        fileplace: folder + file //should be redundant
+                    }
+                } else {
+                    delete tempPlaylist[folder + file];
+                }
+            };
+
+            var span = document.createElement('span');
+            span.appendChild(input);
+
+            div.insertBefore(span, div.childNodes[0]);
         }
         if(!folder) {
-            document.getElementById('playlist').appendChild(div);
+            playlistAdd.appendChild(div);
         } else {
             document.getElementById(folder).appendChild(div);
         }
@@ -143,6 +210,14 @@ function getJson(url, callback) {
         }
     };
     xhr.send(null);
+}
+
+function postJson(url, data) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-type', 'application/json');
+    //TODO: Errorhandling - onreadystatechange
+    xhr.send(JSON.stringify(data));
 }
 
 function serverStatus(server, toggle) {

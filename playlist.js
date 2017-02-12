@@ -71,6 +71,18 @@ var playlistFunctions = {
             }
             callback(playlistDataObject);
         });
+    },
+    jsonToM3u: function(playlist, filename, callback) {
+        var data = '#EXTM3U\r\n',
+            keys = Object.keys(playlist);
+        console.log(playlist);
+        for(var i = 0; i < keys.length; i++) {
+            data += '#EXTINF:0,' + playlist[keys[i]].filename + '\r\n';
+            data += this.directoryMp3 + playlist[keys[i]].fileplace + '\r\n';
+        }
+        fs.writeFile(this.directoryPlaylist + '/' + filename, data, function(err) {
+            callback(err);
+        });
     }
 };
 
